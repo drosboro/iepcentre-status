@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react'
-import { Box, Typography, Button } from '@mui/material'
+import React, { useEffect, useState, useCallback } from 'react'
+import { Box, Typography, Button, FormControlLabel, Switch } from '@mui/material'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline';
 import DownIcon from '@mui/icons-material/Cancel'
@@ -18,10 +18,23 @@ const darkTheme = createTheme({
 function App() {
   const [healthData, setHealthData] = useState({ db: "", pdf_queue: 0, query: "", redis: "", thumb_queue: 0, uptime: "0s" })
   const [apiState, setApiState] = useState("")
+  const [polling, setPolling] = useState(false)
 
+  const doPolling = useCallback(() => {
+    if (polling) {
+      updateHealthData()
+    }
+  }, [polling])
+  
   useEffect(() => {
+    const interval = setInterval(() => {
+      doPolling()
+    }, 10000)
     updateHealthData()
-  }, [])
+    return () => clearInterval(interval)
+  }, [doPolling])
+
+
 
   function updateHealthData() {
     axios.get("https://api.iepcentre.com/healthcheck", { headers:  { 'Content-Type': 'application/json' }}).then((response) => {
@@ -31,6 +44,10 @@ function App() {
       setHealthData({ db: "", pdf_queue: 0, query: "", redis: "", thumb_queue: 0, uptime: "0s" })
       setApiState("down")
     })
+  }
+
+  function handlePollingChange(e) {
+    setPolling(e.target.checked)
   }
 
   function iconForStatus(status) {
@@ -95,9 +112,14 @@ function App() {
               <Typography sx={{ flexGrow: 1 }} variant="h5">Queued Jobs</Typography>
               <Typography variant="h5" sx={{ color: grey[700] }}>{ healthData.pdf_queue + healthData.thumb_queue }</Typography>
             </Box>
-            <Button variant="contained" sx={{ mt: 4 }} onClick={updateHealthData}>Refresh</Button>
-
-
+            <Box sx={{ width: "100%", display: "flex", my: 1 }}>
+              <Box sx={{ mt: 4, flexGrow: 1 }}>
+                <Button variant="outlined" onClick={updateHealthData}>Refresh Now</Button>
+              </Box>
+              <Box sx={{ mt: 4 }}>
+                <FormControlLabel sx={{ color: grey[700] }} value={polling} label="Live Poll" labelPlacement="start" control={<Switch checked={polling} color="primary" onChange={handlePollingChange} />}></FormControlLabel>
+              </Box>
+            </Box>
           </Box>
         </Box>
       </CssBaseline>
