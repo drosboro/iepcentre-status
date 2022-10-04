@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import logo from './logo.svg'
-import { Box, Typography, Chip } from '@mui/material'
+import { Box, Typography, Button } from '@mui/material'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline';
 import DownIcon from '@mui/icons-material/Cancel'
@@ -21,6 +20,10 @@ function App() {
   const [apiState, setApiState] = useState("")
 
   useEffect(() => {
+    updateHealthData()
+  }, [])
+
+  function updateHealthData() {
     axios.get("https://api.iepcentre.com/healthcheck", { headers:  { 'Content-Type': 'application/json' }}).then((response) => {
       setHealthData(response.data)
       setApiState("up")
@@ -28,7 +31,7 @@ function App() {
       setHealthData({ db: "", pdf_queue: 0, query: "", redis: "", thumb_queue: 0, uptime: "0s" })
       setApiState("down")
     })
-  }, [])
+  }
 
   function iconForStatus(status) {
     if (status === "") {
@@ -41,28 +44,39 @@ function App() {
       return <UnknownIcon color="disabled" fontSize="large" />
     }
   }
+
+  function humanUptime(uptime) {
+    return uptime.replace(/\.\d+/g, "")
+  }
+
+  function humanTime() {
+    return new Date().toLocaleString()
+
+  }
+
   return (
     <ThemeProvider theme={darkTheme}>
       <CssBaseline>
         <Box sx={{ display: "flex", flexDirection: "row", justifyContent: "center" }}>
           <Box sx={{ 
-            minWidth: "200px", 
-            width: "40%", 
+            width: "100%",
             maxWidth: "400px",
             display: "flex", 
             flexDirection: "column", 
             alignItems: "center", 
             justifyContent: "start",
-            mt: 8
+            mt: 8,
+            mx: 2
           }}>
-            <Box sx={{ height: "100px" }} component="img" src="logo_sm.svg" />
-            <Typography sx={{ mt: 2, mb: 4 }} variant="h3">App Status</Typography>
+            <Box sx={{ maxHeight: "100px", width: "100%" }} component="img" src="logo_sm.svg" />
+            <Typography sx={{ mt: 2 }} variant="h4">App Status</Typography>
+            <Typography sx={{ mb: 4, color: grey[700] }} variant="h6">as of { humanTime() }</Typography>
             <Box sx={{ width: "100%", display: "flex", my: 1 }}>
               <Typography sx={{ flexGrow: 1 }} variant="h5">API</Typography>
               { iconForStatus(apiState) }
             </Box>
             <Box sx={{ width: "100%", display: "flex", my: 1 }}>
-              <Typography sx={{ flexGrow: 1 }} variant="h5">DB</Typography>
+              <Typography sx={{ flexGrow: 1 }} variant="h5">Database</Typography>
               { iconForStatus(healthData.db) }
             </Box>
             <Box sx={{ width: "100%", display: "flex", my: 1 }}>
@@ -75,12 +89,13 @@ function App() {
             </Box>
             <Box sx={{ width: "100%", display: "flex", my: 1 }}>
               <Typography sx={{ flexGrow: 1 }} variant="h5">Uptime</Typography>
-              <Typography variant="h5" sx={{ color: grey[700] }}>{ healthData.uptime }</Typography>
+              <Typography variant="h5" sx={{ color: grey[700] }}>{ humanUptime(healthData.uptime) }</Typography>
             </Box>
             <Box sx={{ width: "100%", display: "flex", my: 1 }}>
               <Typography sx={{ flexGrow: 1 }} variant="h5">Queued Jobs</Typography>
               <Typography variant="h5" sx={{ color: grey[700] }}>{ healthData.pdf_queue + healthData.thumb_queue }</Typography>
             </Box>
+            <Button variant="contained" sx={{ mt: 4 }} onClick={updateHealthData}>Refresh</Button>
 
 
           </Box>
